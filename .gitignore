@@ -1,0 +1,31 @@
+# Archivos compilados
+*.o
+*.obj
+*.out
+*.exe
+*.a
+*.lib
+*.dll
+*.so
+*.ilk
+*.pdb
+
+# Directorios de compilación
+build/
+Debug/
+Release/
+bin/
+obj/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archivos temporales
+*.tmp
+*.bak
+*.log
