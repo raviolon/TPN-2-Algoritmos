@@ -23,11 +23,66 @@ struct NodoComponente {
 
 typedef NodoComponente* VectorCategorias[CANT_CATEGORIAS];
 
+enum ResultadoInsercion {
+    INSERCION_EXITOSA,
+    CATEGORIA_INVALIDA,
+    CADENA_INVALIDA,
+    ID_REPETIDO
+};
+
 NodoComponente* insertarOrdenado(NodoComponente*& lista, const Componente& componente);
+bool cadenaValida(const char cadena[]);
+bool existeId(const VectorCategorias& vectorCategorias, int id);
+ResultadoInsercion insertarComponente(VectorCategorias& vectorCategorias, const Componente& componente);
 void liberarLista(NodoComponente*& lista);
 void liberarCategorias(VectorCategorias& vectorCategorias);
 void cargarYProcesarDatos(VectorCategorias& vectorCategorias);
 void mostrarResultados(const VectorCategorias& vectorCategorias);
+
+bool cadenaValida(const char cadena[]) {
+    for (int i = 0; i <= MAX_CARACTERES; ++i) {
+        if (cadena[i] == '\0') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool existeId(const VectorCategorias& vectorCategorias, int id) {
+    for (int categoria = 0; categoria < CANT_CATEGORIAS; ++categoria) {
+        NodoComponente* aux = vectorCategorias[categoria];
+
+        while (aux != nullptr) {
+            if (aux->componente.id == id) {
+                return true;
+            }
+
+            aux = aux->siguiente;
+        }
+    }
+
+    return false;
+}
+
+ResultadoInsercion insertarComponente(VectorCategorias& vectorCategorias, const Componente& componente) {
+    if (componente.codigoCategoria < 0 || componente.codigoCategoria >= CANT_CATEGORIAS) {
+        return CATEGORIA_INVALIDA;
+    }
+
+    if (!cadenaValida(componente.tipo) ||
+        !cadenaValida(componente.modelo) ||
+        !cadenaValida(componente.fabricante)) {
+        return CADENA_INVALIDA;
+    }
+
+    if (existeId(vectorCategorias, componente.id)) {
+        return ID_REPETIDO;
+    }
+
+    insertarOrdenado(vectorCategorias[componente.codigoCategoria], componente);
+    return INSERCION_EXITOSA;
+}
 
 NodoComponente* insertarOrdenado(NodoComponente*& lista, const Componente& componente) {
     NodoComponente* anterior = nullptr;
