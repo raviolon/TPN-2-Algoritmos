@@ -124,6 +124,23 @@ void liberarCategorias(VectorCategorias& vectorCategorias) {
     }
 }
 
+int contarFabricante(const VectorCategorias& vectorCategorias, const char fabricante[]) {
+    int cantidad = 0;
+
+    for (int categoria = 0; categoria < CANT_CATEGORIAS; ++categoria) {
+        NodoComponente* aux = vectorCategorias[categoria];
+
+        while (aux != nullptr) {
+            if (strcmp(aux->componente.fabricante, fabricante) == 0) {
+                ++cantidad;
+            }
+            aux = aux->siguiente;
+        }
+    }
+
+    return cantidad;
+}
+
 int main() {
     VectorCategorias vectorCategorias = {};
     int opcion = 0;
@@ -172,11 +189,93 @@ int main() {
 }
 
 void cargarYProcesarDatos(VectorCategorias& vectorCategorias) {
-    (void)vectorCategorias;
-    cout << "La carga y el procesamiento de datos todavia no estan implementados.\n";
+    const char NOMBRE_ARCHIVO[] = "componentes.dat";
+    FILE* archivo = fopen(NOMBRE_ARCHIVO, "rb");
+    if (archivo == nullptr) {
+        cout << "No se pudo abrir el archivo de componentes.\n";
+        return;
+    }
+
+    Componente componente;
+
+    while (fread(&componente, sizeof(Componente), 1, archivo) == 1) {
+        switch (insertarComponente(vectorCategorias, componente)) {
+            case INSERCION_EXITOSA:
+                break;
+            case CATEGORIA_INVALIDA:
+                cout << "Componente " << componente.id << " rechazado: categoria invalida.\n";
+                break;
+            case CADENA_INVALIDA:
+                cout << "Componente " << componente.id << " rechazado: cadena invalida.\n";
+                break;
+            case ID_REPETIDO:
+                cout << "Componente " << componente.id << " rechazado: id repetido.\n";
+                break;
+        }
+    }
+
+    fclose(archivo);
+    cout << "Carga finalizada.\n";
 }
 
 void mostrarResultados(const VectorCategorias& vectorCategorias) {
-    (void)vectorCategorias;
-    cout << "La presentacion de resultados todavia no esta implementada.\n";
+    int total = 0;
+    int categoriaMayor = -1;
+    int cantidadMayor = 0;
+    NodoComponente* masConsumo = nullptr;
+    NodoComponente* masFrecuente = nullptr;
+    int vecesMasFrecuente = 0;
+
+    cout << "\nComponentes y promedio de consumo por categoria:\n";
+
+    for (int categoria = 0; categoria < CANT_CATEGORIAS; ++categoria) {
+        int cantidad = 0;
+        int sumaWatts = 0;
+        NodoComponente* aux = vectorCategorias[categoria];
+
+        while (aux != nullptr) {
+            ++cantidad;
+            sumaWatts += aux->componente.consumoWatts;
+
+            if (masConsumo == nullptr ||
+                aux->componente.consumoWatts > masConsumo->componente.consumoWatts) {
+                masConsumo = aux;
+            }
+
+            int veces = contarFabricante(vectorCategorias, aux->componente.fabricante);
+            if (veces > vecesMasFrecuente) {
+                vecesMasFrecuente = veces;
+                masFrecuente = aux;
+            }
+
+            aux = aux->siguiente;
+        }
+
+        total += cantidad;
+
+        cout << "Categoria " << categoria << ": " << cantidad << " componentes";
+        if (cantidad > 0) {
+            cout << ", promedio " << (double)sumaWatts / cantidad << " W";
+        }
+        cout << "\n";
+
+        if (cantidad > cantidadMayor) {
+            cantidadMayor = cantidad;
+            categoriaMayor = categoria;
+        }
+    }
+
+    if (total == 0) {
+        cout << "No hay componentes cargados.\n";
+        return;
+    }
+
+    cout << "\nTotal de componentes: " << total << "\n";
+    cout << "Categoria con mas componentes: " << categoriaMayor
+         << " (" << cantidadMayor << ")\n";
+    cout << "Fabricante mas frecuente: " << masFrecuente->componente.fabricante
+         << " (" << vecesMasFrecuente << ")\n";
+    cout << "Mayor consumo: modelo " << masConsumo->componente.modelo
+         << ", ID " << masConsumo->componente.id
+         << " (" << masConsumo->componente.consumoWatts << " W)\n";
 }
