@@ -40,10 +40,6 @@ struct EstadisticasFabricante {
 };
 
 NodoComponente* insertarOrdenado(NodoComponente*& lista, const Componente& componente);
-NodoComponente* insertarOrdenadoSinRepetir(
-    NodoComponente*& lista,
-    const Componente& componente
-);
 NodoComponente* buscarComponente(NodoComponente* lista, int id);
 bool cadenaValida(const char cadena[]);
 bool existeId(
@@ -57,6 +53,12 @@ int insertarComponente(
 EstadisticasLista obtenerEstadisticasLista(NodoComponente* lista);
 int contarFabricante(NodoComponente* lista, const char fabricante[]);
 void copiarCadena(char destino[], const char origen[]);
+bool fabricanteAparecioAntes(
+    NodoComponente* const (&vectorCategorias)[CANT_CATEGORIAS],
+    int categoriaActual,
+    NodoComponente* nodoActual,
+    const char fabricante[]
+);
 EstadisticasFabricante fabricanteMasFrecuente(
     NodoComponente* const (&vectorCategorias)[CANT_CATEGORIAS]
 );
@@ -114,11 +116,7 @@ int insertarComponente(
         return ID_REPETIDO;
     }
 
-    NodoComponente* insertado =
-        insertarOrdenadoSinRepetir(vectorCategorias[componente.codigoCategoria], componente);
-    if (insertado == NULL) {
-        return ID_REPETIDO;
-    }
+    insertarOrdenado(vectorCategorias[componente.codigoCategoria], componente);
 
     return INSERCION_EXITOSA;
 }
@@ -153,17 +151,6 @@ NodoComponente* insertarOrdenado(NodoComponente*& lista, const Componente& compo
     }
 
     return nuevo;
-}
-
-NodoComponente* insertarOrdenadoSinRepetir(
-    NodoComponente*& lista,
-    const Componente& componente
-) {
-    if (buscarComponente(lista, componente.id) != NULL) {
-        return NULL;
-    }
-
-    return insertarOrdenado(lista, componente);
 }
 
 void liberarLista(NodoComponente*& lista) {
@@ -243,6 +230,31 @@ void copiarCadena(char destino[], const char origen[]) {
     destino[posicion] = '\0';
 }
 
+bool fabricanteAparecioAntes(
+    NodoComponente* const (&vectorCategorias)[CANT_CATEGORIAS],
+    int categoriaActual,
+    NodoComponente* nodoActual,
+    const char fabricante[]
+) {
+    for (int categoria = 0; categoria <= categoriaActual; ++categoria) {
+        NodoComponente* aux = vectorCategorias[categoria];
+
+        while (aux != NULL && aux != nodoActual) {
+            if (strcmp(aux->componente.fabricante, fabricante) == 0) {
+                return true;
+            }
+
+            aux = aux->siguiente;
+        }
+
+        if (categoria == categoriaActual) {
+            break;
+        }
+    }
+
+    return false;
+}
+
 EstadisticasFabricante fabricanteMasFrecuente(
     NodoComponente* const (&vectorCategorias)[CANT_CATEGORIAS]
 ) {
@@ -255,6 +267,16 @@ EstadisticasFabricante fabricanteMasFrecuente(
         NodoComponente* aux = vectorCategorias[categoria];
 
         while (aux != NULL) {
+            if (fabricanteAparecioAntes(
+                    vectorCategorias,
+                    categoria,
+                    aux,
+                    aux->componente.fabricante
+                )) {
+                aux = aux->siguiente;
+                continue;
+            }
+
             int cantidad = 0;
 
             for (int categoriaConteo = 0;
